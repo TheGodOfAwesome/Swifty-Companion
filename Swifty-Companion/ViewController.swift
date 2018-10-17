@@ -44,8 +44,23 @@ class ViewController: UIViewController {
         clearUser();
         if(userNameTextField.text != ""){
             print("User: \(String(describing: userNameTextField.text))")
-            getUser(user: userNameTextField.text!);
-            openTabView();
+            /*getUser(user: userNameTextField.text!){ isValid in
+                print(isValid)
+                // do something with the returned Bool
+                DispatchQueue.main.async {
+                    self.openTabView();
+                }
+            };
+            getUserRequest(user: userNameTextField.text!){ data in
+                let swiftyJsonVar = JSON(data)
+                print(swiftyJsonVar)
+                self.openTabView();
+             }*/
+            getUser(user: userNameTextField.text!, completionHandler: { (result) in
+                if result == true {
+                    self.openTabView();
+                }
+            })
         }
         else{
             let alert = UIAlertController(title: "Error Empty Field!", message: "You shall not pass!", preferredStyle: .alert)
@@ -100,7 +115,7 @@ class ViewController: UIViewController {
             }.resume()
     }
     
-    func getUser(user: String) {
+    func getUser(user: String, completionHandler: @escaping (Bool)->()) {
         print("Retrieving User!");
         print("\n#########################################################\n")
         print("Username: \(user)")
@@ -108,7 +123,7 @@ class ViewController: UIViewController {
         print("Link: \(link)")
         let authEndPoint: String = link;
         let url = URL(string: authEndPoint)
-        
+    
         var request = URLRequest(url: url!)
         print("Token 1: \(Token)")
         request.setValue("Bearer " + Token , forHTTPHeaderField: "Authorization")
@@ -116,9 +131,8 @@ class ViewController: UIViewController {
         let session = URLSession.shared
         
         //session.dataTask(with: request, completionHandler: (data, error, response))
-        
         let task = session.dataTask(with: request, completionHandler: {
-            (data, response, error) in
+            (data, response, error) -> Void in
             // this is where the completion handler code goes
             if let data = data {
                 do{
@@ -188,14 +202,14 @@ class ViewController: UIViewController {
                     print("Cohort: \(String(describing: pool_year))");
                     print("Wallet: \(String(describing: wallet))");
                     print("Login: \(String(describing: login))");
-                    
+                   
                 } catch let parsingError {
                     print("Error", parsingError)
                 }
             }
         })
         task.resume()
-        
+        completionHandler(true)
     }
     
     func clearUser(){
@@ -213,7 +227,7 @@ class ViewController: UIViewController {
     }
     
     func openTabView(){
-        if(name != "" && id != ""){
+        if(name != "" && id != "" || name != "null" && id != "null" || name != nil && id != nil  ){
             let main = UIStoryboard.init(name: "Main", bundle: nil);
             let tabView = main.instantiateViewController(withIdentifier: "TabController");
             self.present(tabView, animated: true, completion: nil);
