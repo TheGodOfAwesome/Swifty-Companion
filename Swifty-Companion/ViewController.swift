@@ -44,23 +44,7 @@ class ViewController: UIViewController {
         clearUser();
         if(userNameTextField.text != ""){
             print("User: \(String(describing: userNameTextField.text))")
-            /*getUser(user: userNameTextField.text!){ isValid in
-                print(isValid)
-                // do something with the returned Bool
-                DispatchQueue.main.async {
-                    self.openTabView();
-                }
-            };
-            getUserRequest(user: userNameTextField.text!){ data in
-                let swiftyJsonVar = JSON(data)
-                print(swiftyJsonVar)
-                self.openTabView();
-             }*/
-            getUser(user: userNameTextField.text!, completionHandler: { (result) in
-                if result == true {
-                    self.openTabView();
-                }
-            })
+            getUser(user: userNameTextField.text!);
         }
         else{
             let alert = UIAlertController(title: "Error Empty Field!", message: "You shall not pass!", preferredStyle: .alert)
@@ -115,22 +99,24 @@ class ViewController: UIViewController {
             }.resume()
     }
     
-    func getUser(user: String, completionHandler: @escaping (Bool)->()) {
+    func getUser(user: String) {
+        
+        let semaphore = DispatchSemaphore(value: 0)
+        
+        clearUser();
         print("Retrieving User!");
-        print("\n#########################################################\n")
         print("Username: \(user)")
         let link = "https://api.intra.42.fr/v2/users/\(user)"
         print("Link: \(link)")
         let authEndPoint: String = link;
         let url = URL(string: authEndPoint)
-    
+        
         var request = URLRequest(url: url!)
         print("Token 1: \(Token)")
         request.setValue("Bearer " + Token , forHTTPHeaderField: "Authorization")
         request.httpMethod = "GET"
         let session = URLSession.shared
         
-        //session.dataTask(with: request, completionHandler: (data, error, response))
         let task = session.dataTask(with: request, completionHandler: {
             (data, response, error) -> Void in
             // this is where the completion handler code goes
@@ -141,7 +127,7 @@ class ViewController: UIViewController {
                         data, options: [])
                     
                     let json = JSON(jsonResponse);
-                    print(json)
+                    
                     id = "\(json["id"])";
                     name = "\(json["displayname"])";
                     email = "\(json["email"])";
@@ -150,26 +136,19 @@ class ViewController: UIViewController {
                     phone = "\(json["phone"])";
                     pool_year = "\(json["pool_year"])";
                     wallet = "\(json["wallet"])";
-                    //skills = "\(json["cursus_users"]["skills"])"
-                    
-                    print("\n#########################################################\n")
                     
                     if let items = json["cursus_users"][0]["skills"].array {
-                        //print(items);
                         for item in items {
                             let newSkill = skill(id: item["id"].intValue, name: item["name"].stringValue, level: item["level"].intValue)
                             skills.append(newSkill);
                         }
                     }
-                    for item in skills {
-                        print(item.id);
-                        print(item.name);
-                        print(item.level);
-                    }
                     
-                    print("\n#########################################################\n")
-                    
-                    print("\n#########################################################\n")
+                    //for item in skills {
+                        //print(item.id);
+                        //print(item.name);
+                        //print(item.level);
+                    //}
                     
                     if let items = json["projects_users"].array {
                         for item in items {
@@ -178,38 +157,29 @@ class ViewController: UIViewController {
                             //print(item);
                         }
                     }
-                    for item in projects {
-                        print(item.id);
-                        print(item.name);
-                        print(item.final_mark);
-                    }
                     
-                    print("\n#########################################################\n")
+                    //for item in projects {
+                        //print(item.id);
+                        //print(item.name);
+                        //print(item.final_mark);
+                    //}
                     
                     login = "\(json["login"])"
-                    if (!image_url.contains("default.png")){
-                        image_url = "https://cdn.intra.42.fr/users/medium_\(login).jpg"
-                    }
                     
-                    print("\n#########################################################\n")
                     
-                    print("Id: \(String(describing: id))");
-                    print("Name: \(String(describing: name))");
-                    print("Email: \(String(describing: email))");
-                    print("Correction Points: \(String(describing: correction_point))");
-                    print("Image: \(String(describing: image_url))");
-                    print("Phone: \(String(describing: phone))");
-                    print("Cohort: \(String(describing: pool_year))");
-                    print("Wallet: \(String(describing: wallet))");
-                    print("Login: \(String(describing: login))");
-                   
+                    semaphore.signal()
                 } catch let parsingError {
                     print("Error", parsingError)
                 }
             }
         })
         task.resume()
-        completionHandler(true)
+        let timeout = DispatchTime.now() + DispatchTimeInterval.seconds(5);
+        if semaphore.wait(timeout: timeout) == DispatchTimeoutResult.timedOut{
+            print("Test timed out");
+        }else{
+            self.openTabView();
+        }
     }
     
     func clearUser(){
@@ -227,7 +197,8 @@ class ViewController: UIViewController {
     }
     
     func openTabView(){
-        if(name != "" && id != "" || name != "null" && id != "null" || name != nil && id != nil  ){
+        if(skills.count > 0){
+            print("Opening")
             let main = UIStoryboard.init(name: "Main", bundle: nil);
             let tabView = main.instantiateViewController(withIdentifier: "TabController");
             self.present(tabView, animated: true, completion: nil);

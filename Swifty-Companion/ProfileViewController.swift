@@ -14,6 +14,15 @@ class ProfileViewController: UIViewController, UIDelegate{
     
     override func viewDidLoad() {
         super.viewDidLoad();
+        print("Id: \(String(describing: id))");
+        print("Name: \(String(describing: name))");
+        print("Email: \(String(describing: email))");
+        print("Correction Points: \(String(describing: correction_point))");
+        print("Image: \(String(describing: image_url))");
+        print("Phone: \(String(describing: phone))");
+        print("Cohort: \(String(describing: pool_year))");
+        print("Wallet: \(String(describing: wallet))");
+        print("Login: \(String(describing: login))");
         // Do any additional setup after loading the view.
     }
 
